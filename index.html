@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OrderManager – Etsy Order Importer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:    #AC7582;
+      --brand-dk: #8D5F6A;
+      --text:     #3C2A30;
+      --muted:    #7A6268;
+      --bg:       #F4F2F3;
+      --card:     #FFFFFF;
+      --border:   #E4DFE1;
+      --gold:     #C9A460;
+      --radius:   12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── Language Bar ── */
+    .lang-bar {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 24px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .lang-switcher {
+      display: flex;
+      gap: 4px;
+      background: #f3f3f0;
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .lang-btn {
+      border: none;
+      background: transparent;
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.15s ease;
+      letter-spacing: 0.04em;
+    }
+    .lang-btn.active {
+      background: #fff;
+      color: var(--brand);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    .lang-btn:hover:not(.active) { color: var(--text); }
+
+    /* ── Header ── */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .header-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 20px 0;
+    }
+    .logo {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(172,117,130,0.25);
+    }
+    .logo img { width: 100%; height: 100%; display: block; }
+    .header-text h1 { font-size: 1.25rem; font-weight: 700; }
+    .header-text p  { font-size: 0.85rem; color: var(--muted); }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #f9f0f2 0%, #fff 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 24px;
+      text-align: center;
+    }
+    .hero h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .hero h2 span { color: var(--brand); }
+    .hero p {
+      max-width: 580px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    /* ── Content ── */
+    .content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+    }
+    .card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card h3 .icon {
+      width: 32px; height: 32px;
+      background: #f9edf0;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .card p { color: var(--muted); margin-bottom: 12px; }
+    .card p:last-child { margin-bottom: 0; }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .feature {
+      background: #fdf4f6;
+      border: 1px solid #edd8de;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .feature .feat-icon { font-size: 1.6rem; margin-bottom: 10px; }
+    .feature h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .feature p  { font-size: 0.875rem; color: var(--muted); margin: 0; }
+
+    .scope-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .scope-list li {
+      background: #f6f6f4;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.875rem;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .scope-list li .method {
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      letter-spacing: 0.03em;
+    }
+    .scope-list li .method.get  { background: #2563eb; }
+    .scope-list li .method.put  { background: #7c3aed; }
+    .scope-list code {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.82rem;
+      color: var(--text);
+      word-break: break-all;
+    }
+    .scope-list .ep-desc { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+
+    .privacy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .privacy-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .privacy-item .check {
+      width: 22px; height: 22px;
+      background: #d1fae5;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .privacy-item p { margin: 0; font-size: 0.875rem; color: var(--muted); }
+    .privacy-item strong { display: block; font-size: 0.9rem; color: var(--text); }
+
+    .notice {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      font-size: 0.875rem;
+      color: #92400e;
+      line-height: 1.5;
+    }
+    .notice strong { display: block; margin-bottom: 4px; font-size: 0.9rem; color: #78350f; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 28px 24px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* Hide/show by language */
+    [data-lang] { display: none; }
+    .lang-de [data-lang="de"] { display: revert; }
+    .lang-en [data-lang="en"] { display: revert; }
+    /* For inline spans */
+    span[data-lang] { display: none; }
+    .lang-de span[data-lang="de"] { display: inline; }
+    .lang-en span[data-lang="en"] { display: inline; }
+
+    @media (max-width: 600px) {
+      .hero h2 { font-size: 1.5rem; }
+      .card { padding: 20px; }
+    }
+  </style>
+</head>
+<body class="lang-de">
+
+<!-- ── Language Switcher ── -->
+<div class="lang-bar">
+  <div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('de')">DE</button>
+    <button class="lang-btn"        onclick="setLang('en')">EN</button>
+  </div>
+</div>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAgKADAAQAAAABAAAAgAAAAABIjgR3AAA2+UlEQVR4Ae2d+ZNc13XfX3fPPoON2AgSXCWKBCEuoulws0JGtmzHtuSlzNjyWhU7cXlL/gAnVUp+in90XJWKk3JiW5IjW5Yl07JkiZJMeaFEcwVAAiRFEVxBUiBBLLPPdHe+n++5t/tNo2fQM5gWRWnu4PW9795zzj37vW/pRlFslA0NbGhgQwMbGtjQwIYGvhs1UHkLhH4r5nwLxFzzlM01Y64BsZ/GWC3t1cKvQdxvK5TVGnq18D0Ju95KX4neWsd6EuRtCrSSUdc6tipVrGSU1RDqRqezL53fLbrHO8dKc51ZYawE9rZtblrBsDs19oksWSdc5zlw3foyfk/1+Sq7E798rnansUvG3T9bhi2Kubml5z2x/zYGGh5earwnRkrnZSdpOUVp/CzDl8dWpZTzUXoZN7dVl40ugydD33HLLcM3XHrN+ObhibGBkYnhSq0yNLzYHGxUi1q1OlRp1BuZxqoEeLsCV2vVZqMx36w2inpjoLIwX2/OL85Ozp2em5w+8MKTU//0wANzls2OkR3iLGcoG77c7lkta1F6GSe3VWfDJ6Mron/7F/7Dzq3bL9i2eWRo53v2XX3r7p3bvmd0ePCdtVp1ojZQG1U9UqtUh6vVyrA4rvXM9XcGYL3RaMzVm825er0xW1+sz6ienJlbeOa1428+/OiRp7725tTM62dOnjrx+x/978cLMkbLGdbPEbIBe1VpGZ72WYb/ifffPXbdpZdffO1VV9xw/TVX/OLY6PC1m8bH9gwN1gYHBwaKgYFaMVCr9jrfdxXcYr1RLC7Wi4XFxWJ+YXFhcnrulanpmcMHnzz6kcNfP3rg0AvPvfzpez8xvYwjlDNAub2iDssGXRFQg2XYZPy7VEfEX3/TTYM/df2dV3zv91z/vquu2PtLF2yZuHFsbLg2Ojx0Lrob4ytoYGZuvpiZma+/cfLMY18/+tKfPPjwwS//5cGvHD34yCMLbUe4D4PnI1PryQnKRs2I3eoMl+q7VbOTl/Hfear6H3/ht3fffMN1t972nn0f3r5t0zUTYyMVIn2jrJ8GFuv1YnJqtvnGm2ee/OqjRz780IFDX/u9j/7+a8UzWxpFwR7By0I2eme9LCO9WCkbHyJqJ+PvP14txk/VPvwb//mKH3jvLT972037fnfXjq17MX61upHil9X4GgfQ6cjwUGV8bGTnxbu3/9DWzVsm37HnXa/c9/TnThcXLygeIfy9Og6XZyjbrtzfaq/GAZYaf2qq+uHf/K/v/PEfufN39r3zkt/accHm0Y21vaXXvjXQsYJseNuWTXdeuHvX9j3b3nH4vn/6wpsrOMGKvJzLAbIHUevYpcs6Rb6M/59+/Xeu+EkZ/4pLd//c1s3jGyG/oprXf3B0ZKiq47rduy7YunPLJYf+/v4vnWo7wXPlCbMNy32t9koOkBGT8bXhS8b/zZ//rd0/fOftP7PvXZf91obxW7r8ljdGhgd1dTh07dDg0Gubx3c9++DD/zQdTrBfvDxX5ifbstzndo8OcJciXBu+LVPVW66+bfinfuRH77r15n2/u1Np/yyKGx3fUg2QCcbGRm6en688cuzF14++/M3n68UJ7H21jufyZnBZnpZzgOwxKfq3V9nt752drX7wJ35R6/57f2/3jq2XbKz5y+r1WzowODg4vHnz+LUnTsx8+fkHvnzi9K56EU7wSpmPbNNyX9e7b2VAtRX9+09Xda++eucdd0988Mfe9wFt+n6J3f4SShsnb5kGCETdTd1ZLypPvvJm9amnX3hiobhYSfu4l4JyFjjLZitt3gTMJZ9Sv27rXjS/vXrtvqsu3nfVZT83Mb5h/LfM2stMTEBim2v3XXYxtoqHa7KdbcgGvntZyQGEoZs9PMxZXKzU6wuVa666/Pod2zZ9z0BtuZWj+yQbvf3XADfesM01V73remyFzeJB3EqP3otioIO17CnUOtrR/8EP/fTOm2685t+Mjg514nSQWOdTJTA9NisajXrRrJPNmkWzmbJaq477oJl5RnP7LG4smT6Em9ENG12mn3EqXaikmT2yZJ6qqRSVirDUrihIdEfM55lev2tsg41+8kMf+od7/vwvvnls4JRYJAu0BMksZzHOcoASj3dx2VcppiL6xy/Ysn3T+Mi1/by3P3vydHHiGy9IacFfy9CIkFnOIpQ4LTcxWhkPIwd6U7VaMlAmxpjcwOPG00jAAKI7rAUJEgLglAqIGFyOGSWPJ9qgNQSTSqVSNU84x/juXcXmvbvz0LrW2AYbYStlgeOtLPDEXWLsvjZDpVm7RTNSZImKvYt7KnON05WtE5u3b5oY21vCXbfmyw8elIIabT1LUTZcMhYGrcgYAaMx6R1lYjyKjZYMBexSOJnQYEl+E7ZZQ8hkqKaMFkILLoHKisFHSVI7F4DKRrBncnZYOgO+0CbcY4m3cMhm0RDOmVdeLSZffVUj1eLCG/YV1cFuJtDwGgs2wlbKmBVs91JxOlMK8UrSMVDeA2QAdfNsP9K/XlqoXLr/ypH3XH/VzcNDA+v6aO/Yw4eKlx54VAbV/lUzNjGGjKuXQ3TGuRSa+mgbxtaUkYk+2jq8PAiu1ed2jDWhBRxV6g+agveS4qk0Hvh6Rr8UDjfzXBg300q0Ew+mqzEbOvEUbaaGXtAMJkRPMMj8yqOPFy8/eCAxsD4VNsJW2AzblTaD5Qlati47QAkgbRzS5u/qd7xr/MLd22/gef66FCnAhtcTrlxaxpPCI/ClbIeilJ1qKxVDyajZmE61tgcfofCgiaIFBzYKb9FQH+c+oMM5c6WSaBg3GU8AmQUBmaJxMg3GnQQYShBp4gB3J3MGL3ZGToBt1ouX//lAceLoiz4/3w9shK2wWWszaKLdN4PLOIAwtPvfKwcglYxt2jW2aXz0yvV4xDs/OV28+MAjVkzL6DZUGCkiRu0UkeUapYYtUB4nYTwbUAPZKcJ4oeBAiMjFYC4Y3O04t/FylMYEQZ5hHdnQnidlkTCwUn1rnPnDobw3MJ3oK58zb0PzOwQFX9GbcOBNvXa8ePmhQ8HfeXxiI2yFzWIZyFcD3Yl2OgB8RXrQtX+jsbvSbC5WRjcNjOhGw8T53vlrLNSLVw8cltJCaBssK1yKZV2lr6702DI2CkfJUpLTs42XjJLtaBjgcIgML6RWv5pkDY8xRxgq9zXUH7TBbR/gN5SlWo7FucYF1ILjHJyMb/h0Th8O0sh8IANZL49TWx74kdzz83KC81sS0k2hCWyG7YrikvILt237Jn9YJqf70sEgeFFRGxwe1Dt83X2o996XHnzMmzcLDZoUkCMs3I7tnP7cTVqWowgGg8WykPkXAKPqRHFBBF+OfsYoTe/E0ji0MmyMxqdotwr8aAp4YN5cwrHyGbWANB1wNjJ80J1x4Fl/Hk9thuDXJcEBA5X2TIqBuYVi9tSZYmTLpoBdw6dtJZthO+8DTMM2LU/l3pwBEmf0sQGMwhoi4StDRU2Z5fwc4IX7HxLRrBiJLSWgoKw060QfGBuNuI6dm5lpjacoN55p5AiLDGFtGjjTAD0M6khljH+owjVR2u7ITpJtBRB4VlCC81KgdmSSiH4vI6YZ/XYiIj5lrOBXczGt+jMuWUZe1Kav+V47dASm11xwAGyG7bwPaFFq21ZdFmmZDKBh7iSl0qjqtkatuuYMcPzpZyUk2rE6rVB0GdpIjqDZAiKg/FnepRuX3ijA5ih1DKnDykXhKtFWJxP5xN1qKmr1ZwOpy07BOCUxpbdzPR6d8enUX+poX0EIWXgNbebKEzW9wY2J5RKR+aQDnKedCYRqz1Hd2hAHM0f/4YHiivfeUpqx96beHhrFZi2Mki1bfamxvAO0ILcRIVV5wEira5WNmW++Lo/HZCrWl9o6504ZvdmQHpcybbP0WpnvtyTDEJWoB2NQG06dXgpEyJGaQtdKTzBMAjxFpopG6dPzA+O7ebgGcMzRXlaW0E70gCF6QTCuTsWMcc0c4+5qZyBntsQzsMAl8UKOhBOdRl/1B7bCZkWxTbh6XWyFkpeAriCsIbpMybob7Ap0js4pGd+bINRiYWPDg2ryZi80HsoKcmon2Ow39KMoK4vaSJyT+gPXjmA4zaU+JwMjaU76TSQacR54DIQTgRP80ec2dQKLPp0AQ19rQE1vYMGVQ8CP501zwUu6dMVbPKQP+sx7dAg34VHrePYrX4PjtRTbCtt5D7cChS4ZQNeLPACaWgFrFUPfPPJMxBFCRmgZOyJKenIExYA/BZYADO9xUJOrMtzCEc1Ip1JmuY0CHWX0BzkSv/JtkLYlY6AqOBtBqdjD4FICVIZgbrICkd02fEXeJYyAVZUdKE8IDjxxbrn8oVP9MafZYRonGZ0DmjvVD6r3JjHD+X9i0yd8L0CU26WLA7QHc0sbGdhfW5EkrLkIGLdzMUrwYDtB1dKqNliMoSi3pKGLbtxfjGxd+654bYyfH1Z9dqE4dvBwsTg1FUsWDimSHIibpFMadI8nS/5pXQGYHQhnXm3p1WY9OcBqJ8/wRGqktegpr7+xGaJfkSJPqOilhrikCuXUxseKy265KZN629W1kcHikn9xg/muz84XL9z/YBgUY5JtkFntltGBlGOgA79WLy8B5rn7Hy4uv+Pmvsm/4h7gfGd99fGnLBXejsHDtKRRDvrkEjiJRso3UC56z/Vva+N36q02MlRc8b47WjI7KJBZsvvQFUBDXwkjYJwP0A/ZUPpZnI3viHbSXK/zvjrA9PE3LQQWzgbPGyQnNfVTs7pKVtd8A2Zk2+b1ku/bis6FN11nfuz0CKx/+cFX3jOgJ/rRCcXnbvXno69LgNxbYpRu6yahbHyEK8lEn8CLq3/orlJvu/mG3hM48czz4Sxp80Ak8YcS0xWcxuXTac0sL53hYB1zCokNoJ2QDxhS3eLLfbH9M00RyWN588gmDtoZl13dpj27ij03XNNmPrXGLtiqSCcTCrxCiAerjnYtC0xH8WUufGicp4b9LH11AN88kZzZm7Mg3B3jJYlcwoyCsiZzb7t++vNfCRooxAaiIbqQUF2r0anD5+pIpUWOhtfegGceXSsX9fpi8AEe67Eu5URFzeDF27a0XtsaDOJ87PBNT5y3p9MgQ3rmf+yVYvLYq8XFN19fjO28wP35Y256phgcHY55+BQB/ng+QrhAjmkQzncRM2Kf6rYV+jBBrOta2xCSgxC3xog8iVvqa48tZeSpz/2dU4NTJfC+SweMVKV/KMtKS8bHLqFGKTW141Ix6NKnB1syvt5BkJLhgWDEsNmhPIf5ZA7W5aBl3k2UrBPvMDA//XTTjr1O1C92eda/Y/9Vhgcn68VtpICO51WTdyQQjKOPpa8OgEAI4EyQBKON4OViMPrLnaW2N00lnKCBuiNqMiL4cVMoKPGJYQwvoKzwuO5H30BwbZLg5QhEHZzYJ+SkAat53B84MpPlCpagm/FMLtEVjP69/tTz6myXiQu2eTZwPL9rjbOc5bbpJb7V7mfpqwOgNEe6hZNSs4SpzlnAkktKIm1J4bSFkxQGAH0Yieg0itoylvQtg+tT4zgNfRhQd8MSTlTAZRpMSfYBhqhrOaf6Mg2WCgykDs/pbCVE4GNexnSAY34Djixx/Llnma1VKtUEuwRetMwINOFF7qe5TJO6j6Wve4BQrgQmxjCMSk67thw6y31WKLClIhSnWnKzFULNv4CDop1qcCjerZuZjRHookQVG0T49cHBojpfvi8uKpARHPcgWP+hxSMI7nt5Sm7vQgTeCRU5gcUQHO/3+f4/dmKfoD6cL67hBZsMxw2hcsEhgdU/OzxO1rruV59nFE9kmfxybBl/vdt9dQCbXMrBFjm6eWpWlXZRgIsa8nkrP69/S4REWYo0dvleF5MzVPSs4+of+/4wzhKEonjynntFv1Fc/n23FmPbt3SMavyvv6g+tG0reF+B4s2vNmNex9lUGkaVZGA+PyVUN5vD5M+ciC/o6JCcyAdZZMLZu8lUyY5kztCPNqP2PGYki7BPgT0tPdrz9LPg130rTr8IgEer5hKISKvrN3CcnpUiHaEaryI1R2ehS/1ex4ke0akvLBZX/qs7pHSbrBOjuOaD79dduJu6Gh/gaz7wAzKa+IEv0TYPnl9T0dfqt31tWH67x/fwzWbgwIuNL7M5QcEn8uo87verv5NF4SMLBw/DzANymR+WqnAu8+CNZhednCXx2jv6mgF4xp2jCTFQCsomG/iSCwNaGSFAPFNfKkw2kL5mISyKcIUzOLHy6wmb9uxcSqjjrDGgB2bzc0wf2QXiKW3jWHVSvLrYZyiOjc2VA8WXiY5irxfu4wNYu4wq6JpfMkO5IDKO4z59ai7UwJICRr6K8IzqCrgygfVt9zUDOLLwbqVFPz1zdOH19Eloez1SJsEVEWcVa1LRIqWxH9Bvq9l5zoJbZcf+H32ftRuRRyRHNvKGEVqaJx/BQlgDmTKMo9QyCd9AItk6xwvo72QM/EX1ZxyyRtIB/mM6MRbOcBaBToLndd73DBDBw2VUWmPt0whFKMjwqh1RrJpdZMVJQHFEOOD4KbWlG6u1aiCyU9K5iBANsBCRzqT0xJ4g1miuOsSJQhZDu3Aa3AWfGgs5NM5eJ8MFtI3NOEsekZ80oIYlNDz68BUOdTelJFrrUfXVAWCQyEJFLlnDnODpEtAKsiOkPgO2P5YoEF8Q2sA6fZsG2n5ELeejcEYke+PG3T5FqY2LkTWvbUGatxMIAWbU5t0bWVYfAhRQ3OVUm2FgSgVNQN/3/nEOnAziDKiwp1BOCBqCg3Q/S18dgOhFWDs3eiDtWRqpXYJ7zdR47mVf0FkiVUo/KAhlAyCc8y2HPvV5R1dFtwExElcZlJhG9NWHcygv2T5aIDSqA6fFMdTEbeCoItv79TbhhANhWEhowwpaqXDJR78TA+SE7+yIgAkW8TyHacBR/0pfHcAhI/69/jtq5M++TNKajrL0x8Ywy74k2rPMGF3rPxFjOGtO76xOzRQD4ytvBDOJbnVjXvcMZB3Y0o8VW/nwg7oxQPCEc6jDNtCo22wK07sL4ikHcZWGAGI5ADYhum5z4H4N2cCey8QdBDhDno4a1A70NqF1avU1w4QyUYZEkyRs4uT8kgruSW+sdeon7Tn1eWCJaDgFuMZPxgfg8Xu+oM9Q3hKEHk4e+fg9Eb4JNm9G4YNNpiYLfswX0QqPbQObZ4wFHH8a4/KP/sxrNmvnRYBhTDfmgi7OgD6E7iXENDMP7uxBqDWC9NUBEIti40poS4iQboZhvUQkJXQzJ/KzKTKuq0RHOA//ceu39T1PLx8LkzN6UVa3dqV05nMqZ34fHVchVn5khWxIshG4dl4yk/Cg4+yF0dJhpxarcWnY5swZwnRjbkZaAaB+4NOwkRjrZ+mrA/irXvkSR4L5Es4ConBsGsJGTUR0GMDK0aWf7sVbsVI4sHFJGFHz6Ef/smf9YKRDn/6slAxNojbdiEmGIorZtC5yo0pzOtKBUx/z13X14WyR+tTpubORYowsF3wGvRwGiU3xH1kgZOcFGODjWQRK0T/pzJkhB03PEq4esK8OgKLx6BwFEchESSjIqQ6JVbg9etaOSf3cTHKEgQOs4KCDpny5JOU99H/+jI4Vy6J+dPmRj8lZwMcmqkPpcjobIR6/NhY1TiSyP5DhnX2AFQwGj7t/4sV3NXGg1C/+7BDAYFCcSTgNOVO5IK2XC9EEjmdDS/BKzuD5y8h9aPfVARDMCsJwKAihs3JdS3kSmL5FKRITR7FW3OQhEkZgGfFyIRhoEnUZvqnN2EN/tPxy8Ly+jXzg438Vc8EDNOBHrmU65kEs8ofT6txnOB2HztrrO33ABT6DhoEuxsOZNK4P4zFHubRoe86gzziO5ag3XclKpz5Mi3afSl8dwKlRuiCa3MZoEjwFsNu5H/m4WjirCJ8bM9Yp+ERWMqJrDThKtUg/+IfKBACWyoPaJxzXdxNC8THgyFczK5dLuNi900k/c2CQmA+jhhnzplV8yim9RMALh3CYwziq65yLF45ygY5lpmaMDbLgs6OYJ52yDLBMeVNaJrDO7f5eBtqgoRyMRIxz/S/RbSdvwNJl4XJysRbbwLIMZkCBodNkeCnP2WEg7tg//Ed/XlTGxosbf+qHi0f/9FNK9xHRfFXOD6NExxlFRm0pHauTacxErgUnQ8iMrUe8msnGAt9O4TrGfZlqfOElm2PM9r0NOmMGEVEbftGN9jdC4HcCoM/bSjK7x1tKMt3+fPTVAfgfMHhHLgSPaMCMFLwfBcWNEXrinPqsIjjg9f/sxEaRi3eUKGVZySB4Lh7ZKlucOVU8/NFPYlPrUKiOSN2CsfFzNmAcuhgU0xCZmskc+GkedIVL1vGtYJ8LHmj5MY6nUc/hINaZx8wvdBID4LmoxzeCmIVMiMxMwQe0kDOScoWNqvpMI2H3o+qrA1jhSXCU6BcfEBPjSXmOWWvOKlA/Sugo6sspM3IA4wFn32rpDpWmSzLGyQzoH/o69ZNIYbKP4JAlxAKRSApWH1GIwSi5X2B4Eb1ciWSnAE//2ZPgwMUFGr6ZhBSY1t6hz26FjAZDUPXSAU7SBdP5MlN1OIpoIUQfS18dAIG8CXQo0kY5CISn681c0p3qbHjUl8dzk3cHuLfu1Gh8bOLYseKsHgwK1WRY2hiJUw4ckXPw2Gz6RQ31xXgYn8e/mCXnbydoAGyDRN9zkNWqomNoqJiOThkVhbjV6+wk5Cwbo8jmJRCyfglE3+BODurlUeMmIzbIntCrB2Fj9+Ojrw5AxDS0tiGVL59ahtMykCIQo1DQQ0QkwG1RsYHDTGs4kEQOyrETEH7uFYgAHVVG4DxGwMnkUG9kHeJU7TR3jkZzkhCafncPOjI4r4zJEM4oIgauqQuWvUAeBzVkUC1Hq1ZrZl3dpSI6GBUSOKn+7DTqY8MHS8xjvQjG/Jaw17vZVwewF9swYtvGR+5QHnVDkioJtJWLPTtLdhAbVsrSufcNwGm95NzruAhhYCcJLEEBN3WQQcwD524K2jQj6uw+XteldL6nKDZBz/QxCsaoVKUyDGcx4AUVhlTQo5+58u8zAFYu3mcYV1jAe5BPHZrfOqFPsnlJ07z9LH11AHuvIt3CSWkoEwWRFFiHMaTXcSkMI2KYzkIXJuI5vPFlGWqMg1FQWqzrBtRHGAd3AIiItPEVjZSqvkRC1OpNUNNwJ7x5WLQZJxITTzY6eDiQ+GCMzIFYFs3cwQPTidOY1g6U3MJTxIeAMDSyA6uNHgjx8if0VdQfStESKeGyi8Tg+n/21QFItFzbO0IRzCULjCq4IpAmMf4yJS6vbE5ByDjgKIj3/dj7i617L1QfuNDuRiPPqeEVS8ZdLbyIJtQH/vD/yTk44cBlyTSZ70y/NSzYuMvIJjVfYTgGiBcKDpLTUPT05bO/DqCNlT1aVaggDKUE6f54g5aIlk0lbKTkpXLKfyKKFW5EHOdE21b/3m4mHNSXYnK2XP/ZkNGzWvg2HdsKdB2+rs8poptzu48MQEbS/YmS43CvwhlOexDG7QTtada91VcHqOjmjPKtDUssVLh2Ym2TFX0piDgStEJ65q0KEgLR7HWBtgrtrFSdxoZLdBz1aVzVW14UyTn9YzgvB/bWlFXUFyyTHcLpQcD4XgLsMILBwUHB2bXZJYb6WfrqADDO1Qy7Ydw5hOXLnNywkeAAaG1FRt+p8zpLZ6l4jUR3QOtAuaL31T/402LHFZcUw1v1VXKUx9osh+OVcaKK1Koft0vKTrt4ncWVCU4nUsmPyDyDQ0N+XR3DeZ3X/iTXtp2NmfrEvy/nxO+cftPvlcNPez+D4bEgNFyg5b445RMHhn/7ODwIifcl2GvQdvQLz7Tc38btR6uvDoDOfKlFo6UI7Qn4WRTOpQDqVjYIqWMs6TBOBCRNNrGaEcFvFm8cfcEpMvDTEoES+UtTtIyB8+SSm/BgwyZgYGhCQ7UdViCmQQcFHmnCt3nhVAZDRG3qwlERHOvqn285G9MfTImz+iGXmsYVsh2Bcxs/HNQzpmlB60fp3QEQxtz3zkYoBD2w48coighHfpzXpbC4McKWCaisUs3BXAivA+VSnCvMBAORUcB0xAvImylFDbhm1U3RBMf0uDwLSu6wsoMuaPQZliamSf7GRhQn82bWDCU44TuS9WFDCousAQhLHw1wzIvOKLGxS23GdDAPN6d8rwRhhc/lYMyfskGg9PZZnvAcGL07wDkIdR2WEGz0bHgzhbCSTu24w8W1LoU+dQKTD/frVAAMGS8pFEeI9My1G2mZ1E6a90iLnu/4YWTuulnLQQuC+Z48vDnqyDBJ+fBjw4g27MQNGpwHWoIDB6eA+cR6yGVGRU/dwDKs9lKZcIjUKf2Ec+rcl6E6ByHpAnyOfpZVOsDq2CGqvLZLDNY4nCEk1QByEr0omVMd/oJEh8jZYTA4v4QdkSZjaJ2HgtCsJTIIt5bDYSIbYASMV9Oa65sqAe2o9FfRmEuOEfcgIhphzKYz4UQchxEtjAWvFKDiqR3OAI2IXG/oBMR8OKejuCRT8C2WoQkd0SU7Gp1MIJxIK9KOYYBand6F0HNZpQP0TNeAVpKNHgpxFGok/zyKo1ay4Qi2RWhrySQtRVnJGExUMQRQ6FzKY/NH9KrbhrHTMA8dUFeVoy7oYWJTMJ4RbQ7wmUKfHLT5E1+xz6An8GJDGzBhvdaQnQTHZw4MWy44cuYBWrR9u9ykcDKCBG7hQS3LUKawvm1Wub4V0qXTsIRgA4dY2auRC1WipFAWSg7lmqGs23RilSiSA090UipGS/7dHUVdHsu111+iESvQaQdjnjiN7mxgTWSjE7XKLmp7TteCFy62NM+iGUsIazVGVM3yI57ZAsATj6VxvErcYqTTBTyWv6BDV/Dtl2a0PwIHQqYrmjlojNyHj54zgPlaJQNEItFN7e8GSIlqKSpwDEQPQ9S1RssL3ME85YKqok9KkVLjDANUitt+5UO81B/gAEFwHcuhT3++mP7mG54f0hw8o4d3G0gjTt+a2xkCD4iX/PxtIeBBKsvk6NemEUexDgwkvfAFFSD5x4AQndXwXeisoqwGfnUZAMqrOHgtClFYhx0NGRmliA5v33ptlcBhaHVCn5LmwVn85iy0uLRCMaJ327/7+XAaCHGAkNvrVF/34z/oqEYI37zSLCxbTuPiwUuFJVQ/vGWLqmbfYYOiANijmEUcKLId4N4M2yEAYj+AjLpJni4fw7EC13QAO9chkF5LzxmgV4JlOKI91rzQjS8BiXQVZGBDRCr3Quks4aEYpClQlOXkIG35IQ7bRqdV8BJ8Hyvv+OHRhkaeuHS148rRMCCGDGYYF6y/K0bW07lfQW4Nx6WeTv1EU/i+ski3+/DbWK5Cbl9xeF7o96esIgOghNUdVkbi2+u7LEnq9PotRYWAUiA7+rTuLRWTNZHUqGGyiA6WFDLK/XwpJHwpUGiXz5cSasN066evEzfRY8PJy5nOUGrDCzb2OWjSoPssTzsrIK9+s1+DjAIYFd6M3JYLGMnCrt+UIawjZxYwY8ZoxUy9ttN856h6zgB52nPQWzLs+/be1ZI6I80TLdkZDCzCjmwUYwUzUy6KIvCc/oko0qzGSJn6CdV//IOPRsShuKRg5nQxLXWDz7hKjtp8lRBw+mwZCuYwCDSyITgNHljiRSScUSf8YUi3oIG5ksFtRHiApP5ySVDqFP2U7mMsoIK3mJtxWG9jZyor16uB79kBzMVqKItHG1Q4KAhUjE8GCIVrHG3o4FlBvtmyRNo8H4jAmlYoJL6nHzS5dCalxjeIoo/768bRB0qFRNDGmKHgzJP8yYwA13qDibmSL/HLXvDo7IXBIaZxT+EP6AMcY+HIjDOP+k2fOVSMqz2CHNW6SLJx/e9zzwuzFCaJyqe9fpTnOwdOzw7QjY+WTtMk+TzXOdWx90cSvwgiQU0rK1JjvmkCSFisrTD1SYX6EK4ujyMSgcKh2B6LMhHLuWAG9LMv4XQoHniUn6MynJBxP5+ArqkDyCwaJ/3iTQwxKlj6ydLA2sCqYhOnZQF4kxE3ARR9TKt+WKsM+hYfBFx4QAWOb3qpzptKO5UgmDMpylPCATN3K566NNB5XhpattmzA5ibDlY6GcvnrZr8Rbp2jV4lDJc7PofdEJhLKbwfxWRcxlCqN1LJWfx6NjjpwHUo+RKMDRf6o7ALB5LLNmPIIqbPHKYXzuEwF0xKwIYNRYKH8nEgDEVvNgbulzZw6oO+PzMdzWXeFf1X3XKzRtuloaeVsWwIS+zjKIEcS0n4mjASLeaGfrfS2ZvPQ5ZuGGf39e4AUM8znE2ne490DA5CZg+3tBZaymRMfwSPmW55QEzEspqfsNHj9VENaMXdQJ9If0EL2nFdzmUnd9SA1YcZCLVwTgSbH03A5hIDEPmYN6dlIpOCr4bxzYHa8Kqij7heT7jMA3HRa8krmB37LhegGoypfuHI03EqQubNkifnVLvlaJ4EmjGXPnsvGbcHjJCyB0BorvYIZaYphEwmiF0vJpNkCBcWsVKk6jYnabLb/z3X+7k7DF3nt/U1HreSTcR7AD9rh6w1G3N4LxATMVnrz+SxLv9wQAwnotnwEZnQjgIm4/kKplZrx47lgiGOPJd4uP1Xfjajx5iGTz7zgiGAAzwHBleC5BHTN53g1jKKCpRXc7QnXrnVlmJluDWNOtNLGLw61kusgy4srSIFkeQYJdGipzSdYG/7Vd3x08BLjzxezOqXQfjWbCwj8gy1SZts0nwFwCUbcySDMpen0X7ADiJYT68PmdN0WZf5DxvIGrWafj4OHH6BPBWMgk/V+al38NRGJu5jYED4Zw54H9XX0i6+Uf8r+BCXttGX6VAD43sLMCFl8GJMjvqYMXSVM2J2EHD7UXp3ABg2072zQTq2B3PzxJc0RFngI2CoAIHjiR3G+sr/+OPizl//paWTJJy9N717af+381ni2UKaz0px6PP3OcIlsd5+C4B4DuK4iOCQs3lPg8cJhn1PS2m9ypuV3AN87w5gdnqgWALxdSz3+e3akV5bl3tlOK232eOJ5G/844PFld/3ve0ZszJLOGtqRogF6vnSDPsk2dqshqyd3MnkurV75oVjziSxnARqvseBzfJVBVFvGyrVsIyeL6ud3JTPW6trubNrGy5Weeze9w4JzOaKafB7MkKyQq6hqS5fg8vb6T72xNPF3//Pj8WAB9tNTpccOl1yXh7vHOM8l044+st9y7UzXLnObXCWlOg4+sCjxdf+78dlTGVA1kWVlh7i1HM73aOApGc/D7BnCCH19Vx7lnN/9JwB8MPV+uKVt99cvCpjIp29GzkkIDt4NoO+Hw5VZTlfBmqZsF9ISTUtqvf/r48pEirFvn99V7FN3wFwZHSTKStxtWOd8CvRKcP2ADf9+pvFwc98sWjoF8oBt8HVsBbZRFASnda3j6WHcELG2XdU9P8nbTEO4L2W1dipZwfodfJOOP/ejSwcxpZYMjxSxm3QgCY3WBl2fo3pLpkdH8/QFuvxv/mi9xJA+2aQ10mr0vpyv3D9HB9EKY7by76/AAn1ObpQKnuRhA8y+cn/1G8mgIcZdfPhTSRjsCinJH0Hcx4GyJFt+UQX2jVehzccoyEbbNEFH95U0k/B4+UQsal1R6CAJqSbf+YDBuvXR88OALsWYtWcJKXLmFaelBkeGgpwu6RstMS1tq/js47AcRtDgi8rWZnstG2xUCdA/FMdcGLWlwB2MU6CDrhEof5BliUKowSyKhVnmyQw9GzgdIVhkoKJYfAyvvDEPG7ib/4wgUrmxXRYEkUAGM4hYijxE/qhH/nU25LbZHr+gKNeC67aU1Eqno+YW93nrb/6c476/EsZpH4Ez1GI3q17qcQK1Xh+Fm5lMo7iVVuRAg6Fxs6ifZ2v8ZRaUaCVoA/GmY/ztlHVZ8lVYwj+jIApdDgqM3yoxzwwJjiWK9/j0JDlUd3mA5jY8ELHtE0fvnVu4wYNKHte5tM/EwcWhWhgePN4G381LdkKar2UnjKAhNQmdnFaPAz1QrQMgxF5SMMj32QWC4i+yQkW2opCCbaClUI0WMkYKh4itJQOfdbUBTkLKiaFguvbvpBMVxVQi0MGEWS8oBJ0bQyPg69/AArXVXSpQ+f0aRCyFKdvGwxjql9RyhjLQ8vR1JPXfDur6CEPtINWtPMtYV0EBw2N+9fSRJ/LxJt/5seFoM5VFv2mwjQ26wWtpwxQa1YWFxbr0xZAVFdbv/c3ftlBhd4o5swaj3MrkMhIfcDBv+/4IUdCpEKBEHDk8YoYcL5WxiByMfYYgsF5gpxn89NGz82pB1IUQ4tzGzD4CZCIRKdljXu+IGigyEqCBF/zm1dIix+cK/9IVPtd/+ANufgzD6qQ3fKrjzkIEqbZedWVQK3pWKjXp7GZGT3HR08ZYJ4vTdXrU0mj5yDZfXhk29Zi9s1TYUskY30jgqUsTq0GDKxWVmJNr4HTYZUxIFg7AUZW4f/+Q1kiZRiyTQvehgjjMgdfC2c+QHiLRwoSrJAhqAJ57y5sZPqI+oChjuVInLgrchn9dkg5D4938WFQwsjwFXOClFgO/tMcjHsKuMcxxATORLn6zluDP5+t7gNbYbNesHrKAItzUwsL8wszKGmtx00//aPGlZxWOhXaiEjFxCGv06g04T9q6chaolJxZktGszUVM84ANgY0hCMd+gpAbW7X5qzBXUm/lmYjEqnIExErMsGL9R99wZM5CaMmJu1QyXh2OvFld5ETMIZR9c/z8gMSwLAUAOWRXCVeVXkpsTPo5L2/9guG9HQJazXthYWFGWwm1HOWLg6ws1k8McJ8UqLipFJrTk7PzSkFTPL/5rQMBPOrPG7XPX3WRoijIBtTrdjc2QKiGWqKiIj0Hq9kpegAXzA4EtHCV6ighyNBLxwM5YdSs3Mwzl1InIYxnhUCS9ty5HPXOKYaKjykid8PCr4g4XP6aQsQ4+NYzBWRHjx5HveJL17yTDRbTm9dBN7igp5FiJaNL8TV6jbDYyPRmsRm2A4bWhDbVLbtKF0coAOieLOYOnNy+tTk9LO8nXu+5VY9IasotS/yPXhHBhRTFOIVKnYOsYoC7TAd+4MQVnBEm0qWyrW6APcYBBg3vhqCbzmdR2IOoEwq0g0YxgedGeK63t3OLLEciDfwOIScefFSIEQuG2HMd/9UQ8vsqKY/2mbURHjs/d5f05PP8yzYCFths0K2O1fpaQ/w9ee/MfXq8Tcev+Yde4uhdfjfOm795buLef0ffw/+6ae99pFNrSBrJljGIDy9IxOgTKIGJXOO1hmPlVjwaoNKHzXnfuagRnTJGG6IBpN1FuFANiMbNM1Dr8cYFy5Zx46rdvBCRjGyAMgcZARwqDUfE+sf+xXuDdBPyU7Mr1FedN01xZW33lSiY5A1fSzohRNshc16IZAzQJZAOOk3dwcGmno0qiWg2nzxmefnHznw5BOz84uz8L8ex+DISHH7v/3Z4vLbbnJUQtOXVCjZSkKxYRKi1ssEDiAOW/MrgHIh0oBj3MUNlF/CwRJEOZ5ib0njnqeEKzhuWcc81OE4Npr7ubSN6CXlY2bo2UFbDKhP/cjifnOmPhxHsPA7tGmsuEP3Sa64BeOX5DqPNjbCVtgM22FDvSuXuFrye8ruWyYDbNLgKevR+4BqtXn61OQbk5MzRy/YMr4vNLw+nxftf1fBQTn0N18qTr9yXK20o7Z7olidJxHQI8rjqSEqjkgizpQppFiU3gJNymf/pY26C/DcV6APk2PAjAEVp3d12qiC9U5d/VyiAdm6vucqRqTABZapc3bSaXLimNMOLMNToHOHvtHUzkSZ24A9309shK0UTO3130Sx6dml0wEyUKUYHm5WZ1+Ts25pVk7Xmq+//vybJ06ePrJrx5Z9w0N6aaIP5d0/8v1LqGKs+anpYubUpC5q9FAl7UGseOtT6rdhlqC1TiIiIwLdiRFA7lboDhvZkBgIw52FAoxgU+XoDqDAZ05Ga/qvaocV4SMTEyVjayiV5djI42up5/TgCRthK2xWGRyQE7ymW4pbstDUue0pOh2gPe8TegPn8oHm7gWuBE43v3DvF4/f8X3vu+eSi3d9QPuA/nhAe/ZWa2h8rOB4OxdnnW+BAFMzcwsPP/7UPdhqQHfuq9WJ5kukf9lyuZL3AIyXPIPLBV0KlvYBXFI8qfL6iVNfXdD6l11pow7FvdV6wCbY5sknn34SWy1d/7msX3IJCLsuutW2pET+Kg6rvroo9sxVtsyPVer1uWpzdrgyq/9++7K9V1QuvXjXDw4PDgC7Ub5NNDA1Pdf42oOHf++ez332wZPPnZyt1eqNwcGJxulxecbxbTL4Z7ty2m0JyN5hA7808Epzd22z7mOcrj595NDUVx868LUb9r/jsaHBHTetxyVhV642OlelgXld+h1//eRj2AYbkf5rtYkGtiuK8UwLu2bb5r74ZZrWWWsbxB5H7+QdP1MpdixUttTH9BJPvdIcHqocO/7C1K4dl7x26d4L7xwbG357L84lwd/OzRMnJ9/4wn3//OGPf+qjj87NLCwM6L8aGBwcbZwZXmgUT03I6Ht1HO4qYucSABCRr6O9DJxpnCo21ccrjZmpytTcXLMyPDq5Y9v2kxds3/YvR4YGy/uIrpNsdPZPAyfPTC8+/NiR//Y3X/ryfUcOHjhVm5qV8cfqr46cbBSjo80u6X9JFljOARLHZ2eBYm60OPri4ZnhoW0n9l60R1c5ozduLAX9M/BKlCenZotvPHvsI3/1mS99/HOf/eRLtenR+sBAQ2v/WdGP0ZcYPtPt5gCMLZsFms2pSnNoqPLEE18/XQzWju65cM/A6OjIu3VvYCMTZK1+C+rTk9OL33ju2Ef+7NOf+YNPfOJTz+q+WKO2OCMHGG30Gv2wuZIDJDHaWWBb84xujozr91H17ZzhZuWJg0+dXFysfn14ePTlzVsmbhjU7Dx33yj908CCnhqeOHXmxEOPPPm7n77n3o//xSc+ebQyMNcYmJ6T8UcaQ0MnG6eHhpqltX/Z6IfL5RyAsZwF1Ly6UpyoFKd31YutjQlvCFkKmiNzxZHDT58+Mz/z0vx88+AF27Zerm/l7h7QD/bFbVnIbJT10ADPHqam5pqvHX/zwL33PfBfPvPFe//ubz/7ty9XBubrtakRp/6hobHGy6MCfGaL7ltz6/ez5bRfbrdYOpcDAChHeE5V3BdgQ7hVf82mnjYmJ3j+mZemHzvy+Iun3pi7f75ZPzI4ODyhx6L6MX+9jqEnehtl7Rrg9u7k9OzCy6+eeOCBRx///Xvu+bv//bFP/tljTz/+1Km28WfqQ0MT9WNDb5Q2fvdlg+e6KxPnytd5PGWDuyrF/uNVuWL1ovnt1fn5ydri4mitMbFQbSzO1Zr14dq1V18ztu/66y668fqrrr7u3dd+cMvExL6J8ZFLtVEc5pc+cQj/d+1d2fnu7uQRNpHOSx0yvB6DzD1/anLyyIGDR/764ONPP3nk4KFjh596crpSm6tXB4br1cnBxsBAyfjj443iiZ2Kfhsfw2fj5/osBWcDnzWQOsrjat+t49lqsX+2UnaCel0OsGk8OcFIVd/erY42F6u3v/99O7bv2LNty5ZN22/Y/67r9ly0+9pNY6NX6Ascm+QQI3KIUTnEqJ6WjOmhi25KladbjqXvhH6/uaT/MbIxLYPPyOAzeul2Rv+l3OSZ6Zmjrxx77fCBJ54+dOrUmTfeeP2VN++/98uvz1QGGtJbo1Kbbdj4Z6YaetSrNT9Fvo3PLd8r5QCfKBsfha3ZAUDOVkn12U6wsDBb5XZxozFRJRs0Gzrq4Qh6G6cypuev2y+6bPjyqy4bG9+0eWxibGS4Vh0cGhys6XHVoBJCQ/sKnrt99xT9MKQeZFb1gykLdW3s9P9rLcwr1c9NnTk9/dzXn59+49jzc9P61Unu6WfDV6qDDaK+Wp2U8Yd1uTfScNo/2/goMhs9112V26vSM1zJCY7HcqBXz/bOzlYXFi5ITlCvtByBu4f1RT04506iHsLr2xOuxQpOYS7jGxWJOW0s8/loV37fvp0zwboeF8sg6URdcV4UGBsIDK4PG76oTDcrNUU+7/Ylw/N+Rhj/ROOlkZEGj+0j7fOwx5EPmWz0XNPXtWTDdh3s6MywS52g0O3id57S/6S4WNm7uKeysDClTFCPB0gyerO5ueKsIGcwPfr8U1ybxGbq00B2jI45v2NPbegsnQxcFGe0EmL87AhhdB7FA4vRMf7g4Hjc4+cxb2u3vzbjM302amblXHUZnraOu3TICdgXKBuEIywqC+yWEyyoVhZock4dDsEkzc1h/HCGpdPy3GFpz3fGGZHcKYmNrk5e4GAsG9xvYlV4oYOIH/SLHX62j+Ed9az3XOrdB14+IEHhvKeyFkWXcVKbfYGWBByhkCPs19xdnAGOcARqnIKakvvi7LvnE+NmaSsyNu3c193oQGTDd416AFo0OTlXaRnhXIAd4514+Vw1GYGSsgJNnIGiZYJqr+tLaMr48wnep0s+yCBLOt6mJ34xcxneq1XdtXN5sXCE0ybKKUQ6xe/053f6WhHPSKexO8+BWbGcr4I78fO56rs1MVmBQmZIhaWiXLJzlPu+m9rZyFnm9KWcOM1Gd7TTlQ2c64zVeZ77z1kvNcY5wbsCdKNR7kttHIKSnSLO2p8lJ2l3fge3snE7RcTYlNYr3GXjltsB1naKfL6qumyoVSEuA9yNXrc+0Jfpz46yzAxv++6WYTsl6WZcYLr1d+vrpNfT+TJG6An3XEC90O4F5lzzfCeM92LQXmBWrYv/D8dW51ykmMHKAAAAAElFTkSuQmCC" alt="OrderManager App Icon" />
+    </div>
+    <div class="header-text">
+      <h1>OrderManager</h1>
+      <p>Etsy Order Importer &amp; Invoice Tool</p>
+    </div>
+  </div>
+</header>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <h2>
+    <span data-lang="de">Bestellungen aus <span style="color:var(--brand)">Etsy</span> zentral verwalten</span>
+    <span data-lang="en">Manage <span style="color:var(--brand)">Etsy</span> Orders in One Place</span>
+  </h2>
+  <p data-lang="de">OrderManager ist ein privates Desktop-Tool, das Bestellungen aus verschiedenen Vertriebskanälen – darunter Etsy – in einer einzigen Oberfläche zusammenführt und die Rechnungserstellung automatisiert.</p>
+  <p data-lang="en">OrderManager is a private desktop application that consolidates orders from multiple sales channels – including Etsy – into a single interface and automates invoice generation.</p>
+</div>
+
+<!-- ── Content ── -->
+<div class="content">
+
+  <!-- About -->
+  <div class="card">
+    <h3>
+      <span class="icon">📦</span>
+      <span data-lang="de">Was macht die App?</span>
+      <span data-lang="en">What does the app do?</span>
+    </h3>
+    <p data-lang="de">OrderManager ist eine private Desktop-Anwendung für den persönlichen Gebrauch. Sie wurde entwickelt, um Bestellungen aus mehreren Verkaufskanälen (u.a. Etsy) in einem einheitlichen System zu verwalten, den Bestellstatus zu verfolgen und Rechnungen automatisch zu generieren.</p>
+    <p data-lang="en">OrderManager is a private desktop application for personal use. It was built to manage orders from multiple sales channels (including Etsy) in a unified system, track order status, and automatically generate invoices.</p>
+    <p data-lang="de">Die App läuft vollständig lokal auf dem Computer des Shop-Betreibers. Es gibt keine Cloud-Infrastruktur, keine externen Server und keine Datenübertragung an Dritte.</p>
+    <p data-lang="en">The app runs entirely on the shop owner's local computer. There is no cloud infrastructure, no external servers, and no data transmission to third parties.</p>
+
+    <div class="features" style="margin-top: 20px;">
+      <div class="feature">
+        <div class="feat-icon">🔄</div>
+        <h4 data-lang="de">Bestellimport</h4>
+        <h4 data-lang="en">Order Import</h4>
+        <p data-lang="de">Automatischer Abruf neuer Etsy-Bestellungen über die offizielle Open API v3.</p>
+        <p data-lang="en">Automatic retrieval of new Etsy orders via the official Open API v3.</p>
+      </div>
+      <div class="feature">
+        <div class="feat-icon">📋</div>
+        <h4 data-lang="de">Zentrales Dashboard</h4>
+        <h4 data-lang="en">Central Dashboard</h4>
+        <p data-lang="de">Alle Bestellungen aus verschiedenen Kanälen in einer einheitlichen Übersicht.</p>
+        <p data-lang="en">All orders from different channels in a single unified overview.</p>
+      </div>
+      <div class="feature">
+        <div class="feat-icon">🧾</div>
+        <h4 data-lang="de">Rechnungserstellung</h4>
+        <h4 data-lang="en">Invoice Generation</h4>
+        <p data-lang="de">Automatische Erstellung von Rechnungen direkt aus importierten Bestelldaten.</p>
+        <p data-lang="en">Automatic creation of invoices directly from imported order data.</p>
+      </div>
+      <div class="feature">
+        <div class="feat-icon">✅</div>
+        <h4 data-lang="de">Statusverwaltung</h4>
+        <h4 data-lang="en">Status Management</h4>
+        <p data-lang="de">Versandstatus und Bestellstatus direkt über die App aktualisieren.</p>
+        <p data-lang="en">Update shipping and order status directly from within the app.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Usage -->
+  <div class="card">
+    <h3>
+      <span class="icon">🔌</span>
+      <span data-lang="de">Verwendete Etsy API-Endpunkte</span>
+      <span data-lang="en">Etsy API Endpoints Used</span>
+    </h3>
+    <p data-lang="de">Die App nutzt ausschließlich folgende Endpunkte der Etsy Open API v3, um Bestelldaten des eigenen Shops zu lesen und den Versandstatus zu aktualisieren. Es wird kein Screen-Scraping verwendet.</p>
+    <p data-lang="en">The app exclusively uses the following Etsy Open API v3 endpoints to read order data from the owner's shop and update shipment status. No screen-scraping is used.</p>
+
+    <ul class="scope-list" style="margin-top: 16px;">
+      <li>
+        <span class="method get">GET</span>
+        <div>
+          <code>/v3/application/shops/{shop_id}/receipts</code>
+          <div class="ep-desc">
+            <span data-lang="de">Abruf der Bestellliste des eigenen Shops (gefiltert nach Status/Datum)</span>
+            <span data-lang="en">Retrieve the list of orders from the owner's shop (filtered by status/date)</span>
+          </div>
+        </div>
+      </li>
+      <li>
+        <span class="method get">GET</span>
+        <div>
+          <code>/v3/application/shops/{shop_id}/receipts/{receipt_id}</code>
+          <div class="ep-desc">
+            <span data-lang="de">Abruf der Details einer einzelnen Bestellung</span>
+            <span data-lang="en">Retrieve the details of a single order</span>
+          </div>
+        </div>
+      </li>
+      <li>
+        <span class="method put">PUT</span>
+        <div>
+          <code>/v3/application/shops/{shop_id}/receipts/{receipt_id}</code>
+          <div class="ep-desc">
+            <span data-lang="de">Aktualisierung des Versand- und Bestellstatus</span>
+            <span data-lang="en">Update shipping and order status</span>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+    <p style="margin-top: 16px;">
+      <strong>OAuth Scopes:</strong> <code>transactions_r</code>, <code>transactions_w</code>
+    </p>
+    <p>
+      <strong><span data-lang="de">Verbundene Shops:</span><span data-lang="en">Connected shops:</span></strong>
+      <span data-lang="de"> 1 (ausschließlich der eigene Shop des Entwicklers)</span>
+      <span data-lang="en"> 1 (the developer's own shop only)</span>
+    </p>
+  </div>
+
+  <!-- Privacy -->
+  <div class="card">
+    <h3>
+      <span class="icon">🔒</span>
+      <span data-lang="de">Datenschutzerklärung</span>
+      <span data-lang="en">Privacy Policy</span>
+    </h3>
+    <p data-lang="de">Der Schutz der Daten hat höchste Priorität. Diese Anwendung ist ein privates Tool ohne externe Datenübertragung.</p>
+    <p data-lang="en">Data protection is the highest priority. This application is a private tool with no external data transmission.</p>
+
+    <div class="privacy-grid">
+      <div class="privacy-item">
+        <span class="check">✓</span>
+        <div>
+          <strong data-lang="de">Keine Drittanbieter</strong>
+          <strong data-lang="en">No Third Parties</strong>
+          <p data-lang="de">Alle über die Etsy API abgerufenen Daten verbleiben ausschließlich auf dem lokalen Gerät des Nutzers.</p>
+          <p data-lang="en">All data retrieved via the Etsy API stays exclusively on the user's local device.</p>
+        </div>
+      </div>
+      <div class="privacy-item">
+        <span class="check">✓</span>
+        <div>
+          <strong data-lang="de">Keine externe Speicherung</strong>
+          <strong data-lang="en">No External Storage</strong>
+          <p data-lang="de">Es gibt keine Cloud-Datenbank, keinen externen Server und kein Tracking.</p>
+          <p data-lang="en">There is no cloud database, no external server, and no tracking.</p>
+        </div>
+      </div>
+      <div class="privacy-item">
+        <span class="check">✓</span>
+        <div>
+          <strong data-lang="de">Persönlicher Gebrauch</strong>
+          <strong data-lang="en">Personal Use Only</strong>
+          <p data-lang="de">Die App wird nicht an andere Nutzer verteilt oder als Dienst angeboten.</p>
+          <p data-lang="en">The app is not distributed to other users or offered as a service.</p>
+        </div>
+      </div>
+      <div class="privacy-item">
+        <span class="check">✓</span>
+        <div>
+          <strong data-lang="de">OAuth-Authentifizierung</strong>
+          <strong data-lang="en">OAuth Authentication</strong>
+          <p data-lang="de">Der Zugriff auf Shop-Daten erfolgt ausschließlich über OAuth 2.0 gemäß den Etsy API-Richtlinien.</p>
+          <p data-lang="en">Access to shop data is handled exclusively via OAuth 2.0 in accordance with Etsy API guidelines.</p>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 20px; font-size: 0.875rem;">
+      <span data-lang="de">Diese Datenschutzerklärung gilt für die Nutzung der Etsy API-Integration innerhalb von OrderManager. Bei Fragen wenden Sie sich an den Entwickler.</span>
+      <span data-lang="en">This privacy policy applies to the use of the Etsy API integration within OrderManager. For questions, please contact the developer.</span>
+    </p>
+  </div>
+
+  <!-- Etsy Trademark Notice -->
+  <div class="notice">
+    <strong>Etsy Trademark Notice</strong>
+    The term "Etsy" is a trademark of Etsy, Inc. This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.
+  </div>
+
+</div>
+
+<!-- ── Footer ── -->
+<footer>
+  <p>OrderManager &nbsp;·&nbsp;
+    <span data-lang="de">Privates Bestellverwaltungs-Tool &nbsp;·&nbsp; Nicht öffentlich distribuiert</span>
+    <span data-lang="en">Private Order Management Tool &nbsp;·&nbsp; Not publicly distributed</span>
+  </p>
+</footer>
+
+<script>
+  function setLang(lang) {
+    document.body.className = 'lang-' + lang;
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.textContent.trim().toLowerCase() === lang);
+    });
+  }
+</script>
+
+</body>
+</html>

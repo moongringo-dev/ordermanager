@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -226,6 +226,17 @@
     }
     .notice strong { display: block; margin-bottom: 4px; font-size: 0.9rem; color: #78350f; }
 
+    .disclaimer {
+      background: #f5f3ff;
+      border: 1px solid #c4b5fd;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      font-size: 0.8rem;
+      color: #4c1d95;
+      line-height: 1.6;
+    }
+    .disclaimer strong { display: block; margin-bottom: 6px; font-size: 0.875rem; color: #3b0764; }
+
     footer {
       border-top: 1px solid var(--border);
       text-align: center;
@@ -242,6 +253,10 @@
     span[data-lang] { display: none; }
     .lang-de span[data-lang="de"] { display: inline; }
     .lang-en span[data-lang="en"] { display: inline; }
+    /* For block-level strong elements (privacy headings) */
+    strong[data-lang] { display: none; }
+    .lang-de strong[data-lang="de"] { display: block; }
+    .lang-en strong[data-lang="en"] { display: block; }
 
     @media (max-width: 600px) {
       .hero h2 { font-size: 1.5rem; }
@@ -249,13 +264,13 @@
     }
   </style>
 </head>
-<body class="lang-de">
+<body class="lang-en">
 
 <!-- ── Language Switcher ── -->
 <div class="lang-bar">
   <div class="lang-switcher">
-    <button class="lang-btn active" onclick="setLang('de')">DE</button>
-    <button class="lang-btn"        onclick="setLang('en')">EN</button>
+    <button class="lang-btn"        onclick="setLang('de')">DE</button>
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
   </div>
 </div>
 
@@ -429,12 +444,29 @@
           <p data-lang="en">Access to shop data is handled exclusively via OAuth 2.0 in accordance with Etsy API guidelines.</p>
         </div>
       </div>
+      <div class="privacy-item">
+        <span class="check">✓</span>
+        <div>
+          <strong data-lang="de">Datenzwischenspeicherung</strong>
+          <strong data-lang="en">Data Caching Policy</strong>
+          <p data-lang="de">Über die Etsy API abgerufene Daten werden nicht länger als 24 Stunden lokal zwischengespeichert. Danach werden die Daten neu von der API abgerufen, um Aktualität sicherzustellen.</p>
+          <p data-lang="en">Data retrieved via the Etsy API is cached locally for no longer than 24 hours. After that, data is re-fetched from the API to ensure it remains current.</p>
+        </div>
+      </div>
     </div>
 
     <p style="margin-top: 20px; font-size: 0.875rem;">
-      <span data-lang="de">Diese Datenschutzerklärung gilt für die Nutzung der Etsy API-Integration innerhalb von OrderManager. Bei Fragen wenden Sie sich an den Entwickler.</span>
-      <span data-lang="en">This privacy policy applies to the use of the Etsy API integration within OrderManager. For questions, please contact the developer.</span>
+      <span data-lang="de">Diese Datenschutzerklärung gilt für die Nutzung der Etsy API-Integration innerhalb von OrderManager. Bei Fragen wenden Sie sich bitte per E-Mail an: <a href="mailto:08_trank_moraene@icloud.com" style="color: var(--brand);">08_trank_moraene@icloud.com</a></span>
+      <span data-lang="en">This privacy policy applies to the use of the Etsy API integration within OrderManager. For questions or support, please contact: <a href="mailto:08_trank_moraene@icloud.com" style="color: var(--brand);">08_trank_moraene@icloud.com</a></span>
     </p>
+  </div>
+
+  <!-- Etsy Warranty Disclaimer (required by Etsy ToU §3) -->
+  <div class="disclaimer">
+    <strong data-lang="de">Haftungsausschluss gemäß Etsy API-Nutzungsbedingungen</strong>
+    <strong data-lang="en">Disclaimer per Etsy API Terms of Use</strong>
+    <span data-lang="de">HAFTUNGSAUSSCHLUSS: DIESE ANWENDUNG WIRD AUSSCHLIESSLICH VOM ENTWICKLER BEREITGESTELLT. SIE ERKENNEN AN, DASS ETSY, INC. UND SEINE VERBUNDENEN UNTERNEHMEN NICHT DER ANWENDUNGSENTWICKLER SIND, DEN ANWENDUNGSDIENST NICHT BEREITSTELLEN UND KEINE GEWÄHRLEISTUNGEN JEDWEDER ART IN BEZUG AUF DIE ANWENDUNG ODER DIE DARÜBER ABGERUFENEN DATEN ÜBERNEHMEN.</span>
+    <span data-lang="en">DISCLAIMER: THIS APPLICATION IS SOLELY PROVIDED BY THE DEVELOPER. YOU ACKNOWLEDGE THAT ETSY, INC. AND ITS AFFILIATES ARE NOT THE APPLICATION DEVELOPER, DO NOT PROVIDE THE APPLICATION SERVICE, AND MAKE NO WARRANTIES OF ANY KIND WITH RESPECT TO THE APPLICATION OR DATA ACCESSED THROUGH IT.</span>
   </div>
 
   <!-- Etsy Trademark Notice -->
@@ -450,6 +482,11 @@
   <p>OrderManager &nbsp;·&nbsp;
     <span data-lang="de">Privates Bestellverwaltungs-Tool &nbsp;·&nbsp; Nicht öffentlich distribuiert</span>
     <span data-lang="en">Private Order Management Tool &nbsp;·&nbsp; Not publicly distributed</span>
+  </p>
+  <p style="margin-top: 6px;">
+    <span data-lang="de">Support: </span>
+    <span data-lang="en">Support: </span>
+    <a href="mailto:08_trank_moraene@icloud.com" style="color: var(--brand);">08_trank_moraene@icloud.com</a>
   </p>
 </footer>
 
